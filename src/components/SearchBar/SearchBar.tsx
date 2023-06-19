@@ -59,7 +59,7 @@ const SearchBar = ({ ...props }: SearchBarProps) => {
               setLoading(true);
               try {
                 const data = fetch(
-                  `http://localhost:3000/api/places?query=${e.currentTarget.value}`
+                  `/api/places?query=${e.currentTarget.value}`
                 );
                 const res = await data;
                 const json = await res.json();
