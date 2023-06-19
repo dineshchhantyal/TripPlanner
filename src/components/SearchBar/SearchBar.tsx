@@ -1,4 +1,6 @@
 "use client";
+import { useAppDispatch } from "@/states/hooks";
+import { Photo, addPlace, fetchAboutPlace } from "@/states/slices/placesSlice";
 import React, { useState } from "react";
 
 interface SearchBarProps
@@ -10,7 +12,7 @@ interface SearchBarProps
 const SearchBar = ({ ...props }: SearchBarProps) => {
   const [options, setOptions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const dispatch = useAppDispatch();
   return (
     <div {...props}>
       <form
@@ -35,9 +37,9 @@ const SearchBar = ({ ...props }: SearchBarProps) => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               ></path>
             </svg>
@@ -50,6 +52,10 @@ const SearchBar = ({ ...props }: SearchBarProps) => {
             required
             autoComplete="off"
             onKeyUp={async (e) => {
+              if (e.currentTarget.value === "") {
+                setOptions([]);
+                return;
+              }
               setLoading(true);
               try {
                 const data = fetch(
@@ -60,8 +66,9 @@ const SearchBar = ({ ...props }: SearchBarProps) => {
                 setOptions(json.predictions);
               } catch (err) {
                 console.log(err);
+              } finally {
+                setLoading(false);
               }
-              setLoading(false);
             }}
           />
         </div>
@@ -82,6 +89,9 @@ const SearchBar = ({ ...props }: SearchBarProps) => {
                 <li
                   key={option.place_id}
                   className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer"
+                  onClick={() => {
+                    dispatch(fetchAboutPlace(option));
+                  }}
                 >
                   {option.description}
                 </li>
@@ -107,6 +117,7 @@ export interface Prediction {
   structured_formatting: StructuredFormatting;
   terms: Term[];
   types: string[];
+  photos: Photo[];
 }
 
 export interface MatchedSubstring {

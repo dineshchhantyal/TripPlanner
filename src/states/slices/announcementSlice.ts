@@ -17,10 +17,7 @@ const initialState: IAnnouncement = {
 
 export const announcementSlice = createSlice({
   name: "announcement",
-  initialState: {
-    message: "No announcement...",
-    type: "info",
-  },
+  initialState: initialState,
   reducers: {
     updateAnnouncement: (state, action) => {
       state.message = action.payload.message;
