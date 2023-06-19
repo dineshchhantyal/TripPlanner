@@ -13,6 +13,7 @@ const DraggableBox = ({
 }) => {
   const updateXarrow = useXarrow();
   return (
+    // @ts-expect-error
     <Draggable onDrag={updateXarrow} onStop={updateXarrow}>
       <div
         className="
