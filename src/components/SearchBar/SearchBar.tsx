@@ -15,6 +15,12 @@ const SearchBar = ({ ...props }: SearchBarProps) => {
   const dispatch = useAppDispatch();
   return (
     <div {...props}>
+      <h2
+        className="mb-2 text-4xl font-bold tracking-tight text-gray-900 decoration-pink-500/30 dark:text-white sm:text-5xl md:text-6xl
+      "
+      >
+        Your Trip Planner
+      </h2>
       <form
         id="dropdownDefaultButton"
         data-dropdown-toggle="dropdown"
