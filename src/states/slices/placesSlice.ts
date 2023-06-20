@@ -77,14 +77,6 @@ export const { updatePlaces, addPlace } = placesSlice.actions;
 
 export default placesSlice.reducer;
 
-// export function fetchTodoById(todoId) {
-//   // fetchTodoByIdThunk is the "thunk function"
-//   return async function fetchTodoByIdThunk(dispatch, getState) {
-//     const response = await client.get(`/fakeApi/todo/${todoId}`);
-//     dispatch(todosLoaded(response.todos));
-//   };
-// }
-
 export function fetchAboutPlace(place: Prediction) {
   return async function fetchAboutPlaceThunk(
     dispatch: (arg0: {
