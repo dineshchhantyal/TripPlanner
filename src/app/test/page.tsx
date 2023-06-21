@@ -14,10 +14,14 @@ import {
   ComboboxOption,
 } from "@reach/combobox";
 import "@reach/combobox/styles.css";
-import { useAppDispatch } from "@/states/hooks";
+import { useAppDispatch, useAppSelector } from "@/states/hooks";
 import { addPlace } from "@/states/slices/placesSlice";
-import { addLocation, fetchLocationPhotos } from "@/states/slices/searchSlice";
-import ts from "typescript";
+import {
+  Location,
+  addLocation,
+  fetchLocationPhotos,
+  removeLocation,
+} from "@/states/slices/searchSlice";
 import { Providers } from "../providers";
 
 export default function Places() {
@@ -35,45 +39,71 @@ function Map() {
     lat: number;
     lng: number;
   }>({ lat: 43.45, lng: -80.49 });
-  const [selected, setSelected] = useState<
-    | {
-        lat: number;
-        lng: number;
-      }[]
-    | null
-  >([]);
+  const locations = useAppSelector((state) => state.searchLocation.places);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (selected && selected?.length > 0) {
+    if (locations && locations?.length > 0) {
       setCenter({
-        lat: selected[selected.length - 1].lat,
-        lng: selected[selected.length - 1].lng,
+        lat: locations[locations.length - 1].lat,
+        lng: locations[locations.length - 1].lng,
       });
     }
-  }, [selected]);
+  }, [locations]);
   return (
     <>
       <Providers>
         <div className="places-container">
-          <PlacesAutocomplete setSelected={setSelected} />
+          <PlacesAutocomplete />
         </div>
         <GoogleMap
           zoom={10}
           center={center}
           mapContainerClassName="map-container"
         >
-          {selected && selected.map((s) => <Marker position={s}>K cha</Marker>)}
+          {locations &&
+            locations.map((s) => <Marker position={s}>K cha</Marker>)}
         </GoogleMap>
+        <div id="locations-list" className="absolute z-[999] bottom-2 left-2 ">
+          <ul>
+            {locations &&
+              locations.map((s) => (
+                <li
+                  key={s.place_id}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
+                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-64 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
+                  "
+                >
+                  <span
+                    onClick={() => {
+                      console.log(s);
+                      setCenter({ lat: s.lat, lng: s.lng });
+                    }}
+                  >
+                    {s.formatted_address}
+                  </span>
+                  <div>
+                    <button
+                      className="bg-red-500
+                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
+                    "
+                      onClick={() => {
+                        dispatch(removeLocation({ place_id: s.place_id }));
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+          </ul>
+        </div>
       </Providers>
     </>
   );
 }
 
-const PlacesAutocomplete = ({
-  setSelected,
-}: {
-  setSelected: (selected: any) => void;
-}) => {
+const PlacesAutocomplete = ({}: {}) => {
   const {
     ready,
     value,
@@ -101,7 +131,6 @@ const PlacesAutocomplete = ({
         types: results[0].types,
       })
     );
-    setSelected((prev: any) => [...prev, { lat, lng }]);
   };
 
   return (

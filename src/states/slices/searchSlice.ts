@@ -3,7 +3,7 @@ import { SearchLocation } from "@/types/SearchLocation";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Photo } from "./placesSlice";
 
-interface Location extends SearchLocation {
+export interface Location extends SearchLocation {
   lat: number;
   lng: number;
   photos?: Photo[];
