@@ -62,7 +62,11 @@ function Map() {
           mapContainerClassName="map-container"
         >
           {locations &&
-            locations.map((s) => <Marker position={s}>K cha</Marker>)}
+            locations.map((s) => (
+              <Marker position={s} key={s.place_id}>
+                K cha
+              </Marker>
+            ))}
         </GoogleMap>
         <div id="locations-list" className="absolute z-[999] bottom-2 left-2 ">
           <ul>
