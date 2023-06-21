@@ -124,6 +124,8 @@ export interface Prediction {
   terms: Term[];
   types: string[];
   photos: Photo[];
+  lat: number;
+  lon: number;
 }
 
 export interface MatchedSubstring {
