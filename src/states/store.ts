@@ -1,6 +1,7 @@
 "use client";
 
 import announcementReducer from "./slices/announcementSlice";
+import searchLocationReducer from "./slices/searchSlice";
 import { configureStore, ThunkAction, Action } from "@reduxjs/toolkit";
 import placesReducer from "./slices/placesSlice";
 
@@ -8,8 +9,10 @@ export const store = configureStore({
   reducer: {
     announcement: announcementReducer,
     places: placesReducer,
+    searchLocation: searchLocationReducer,
   },
-  devTools: process.env.NODE_ENV !== "production",
+  // devTools: process.env.NODE_ENV !== "production",
+  devTools: true,
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

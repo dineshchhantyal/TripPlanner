@@ -10,18 +10,30 @@ import React, { ReactNode } from "react";
 const DraggableBox = ({
   id,
   children,
+  x,
+  y,
 }: {
   id: string;
   children: ReactNode;
+  x?: number;
+  y?: number;
 }) => {
+  console.log(x, y);
   const updateXarrow = useXarrow();
   return (
     // @ts-expect-error
-    <Draggable onDrag={updateXarrow} onStop={updateXarrow}>
+    <Draggable
+      onDrag={updateXarrow}
+      onStop={updateXarrow}
+      position={{
+        x,
+        y,
+      }}
+    >
       <div
         className="
-          w-24 h-24 bg-blue-200  font-bold rounded-lg shadow-lg cursor-move select-none
-          text-center text-white text-md p-2
+          cursor-move select-none
+          text-center text-md p-2
         "
         id={id}
       >
@@ -42,8 +54,13 @@ const Locations = () => {
       <Xwrapper>
         {locations.map((location, i) => (
           <>
-            <DraggableBox id={location.place_id} key={location.place_id}>
-              <div
+            <DraggableBox
+              id={location.place_id}
+              key={location.place_id}
+              y={(240 / 180.0) * 2 * (90 - location.lat)}
+              x={(800 / 360.0) * 2 * (180 + location.lon)}
+            >
+              {/* <div
                 className="flex flex-col items-center justify-between w-44 h-44 pt-4 m-4 rounded
         bg-gray-100 dark:bg-gray-800 shadow-md dark:shadow-lg text-gray-800 dark:text-gray-100 text-center text-sm font-medium transition duration-500 ease-in-out transform hover:-translate-y-1 hover:scale-110 hover:shadow-xl cursor-pointer"
                 style={{
@@ -68,12 +85,19 @@ const Locations = () => {
                     />
                   ))}
                 </div>
+              </div> */}
+              <div className="relative">
+                <div>⚫️</div>
+                <p className="text-sm font-medium absolute left-6 -top-2">
+                  {location.description}
+                </p>
               </div>
             </DraggableBox>
             {i < locations.length - 1 && (
               <Xarrow
                 start={location.place_id}
                 end={locations[i + 1].place_id}
+                strokeWidth={2}
               />
             )}
           </>

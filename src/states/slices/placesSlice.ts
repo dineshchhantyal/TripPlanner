@@ -67,6 +67,19 @@ export const placesSlice = createSlice({
         state.places[index] = place;
       }
     },
+
+    removePlace: (
+      state,
+      action: PayloadAction<{
+        name: string;
+      }>
+    ) => {
+      const p = state.places.filter(
+        (s) => s.description != action.payload.name
+      );
+
+      state.places = p;
+    },
   },
   extraReducers: {
     // Add reducers for additional action types here, and handle loading state as needed
@@ -87,8 +100,22 @@ export function fetchAboutPlace(place: Prediction) {
   ) {
     try {
       const response = await fetch(`/api/images?query=${place.description}`);
-      const data = await response.json();
-      dispatch(addPlace({ place: { ...place, photos: data.photos } }));
+      const coordinate = await fetch(
+        `https://geocode.maps.co/search?q=${place.description}`
+      );
+      const images = await response.json();
+      const about = await coordinate.json();
+      console.log(about);
+      dispatch(
+        addPlace({
+          place: {
+            ...place,
+            photos: images.photos,
+            lat: Number.parseInt(about[0].lat),
+            lon: Number.parseInt(about[0].lon),
+          },
+        })
+      );
     } catch (e: any) {
       confirm(e.message);
     }

@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const units = params.get("units") || "metric"; // metric, imperial
   const transit_mode = params.get("transit_mode") || "bus"; // bus, subway, train, tram, rail
   const mode = params.get("mode") || "driving"; // driving, walking, bicycling, transit
-  const departure_time = params.get("departure_time"); // seconds since midnight, January 1, 1970 UTC.
+  const departure_time = params.get("departure_time") || "now"; // seconds since midnight, January 1, 1970 UTC.
 
   if (!origin || !destination) {
     return new Response("Missing origin or destination parameter", {
