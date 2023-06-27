@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  useLoadScript,
+  Marker,
+  DirectionsService,
+  DirectionsRenderer,
+  DistanceMatrixService,
+} from "@react-google-maps/api";
 import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
+  getDetails,
 } from "use-places-autocomplete";
 import {
   Combobox,
@@ -14,15 +22,16 @@ import {
   ComboboxOption,
 } from "@reach/combobox";
 import "@reach/combobox/styles.css";
+
 import { useAppDispatch, useAppSelector } from "@/states/hooks";
-import { addPlace } from "@/states/slices/placesSlice";
 import {
-  Location,
-  addLocation,
   fetchLocationPhotos,
   removeLocation,
+  updateLocations,
 } from "@/states/slices/searchSlice";
 import { Providers } from "../providers";
+import { usePosition } from "@/hooks/useGeoLocation";
+import { Dropdown } from "flowbite-react";
 
 export default function Places() {
   const { isLoaded, loadError } = useLoadScript({
@@ -35,13 +44,17 @@ export default function Places() {
 }
 
 function Map() {
+  const { error, ...location } = usePosition();
+  console.log("location", location);
   const [center, setCenter] = useState<{
     lat: number;
     lng: number;
-  }>({ lat: 43.45, lng: -80.49 });
+  }>({ lat: location.latitude, lng: location.longitude });
   const locations = useAppSelector((state) => state.searchLocation.places);
   const dispatch = useAppDispatch();
-
+  const [direction, setDirection] = useState<any>(null);
+  console.log("locations", locations);
+  console.log("direction", direction);
   useEffect(() => {
     if (locations && locations?.length > 0) {
       setCenter({
@@ -50,16 +63,108 @@ function Map() {
       });
     }
   }, [locations]);
+
+  useEffect(() => {
+    if (location) {
+      setCenter({
+        lat: location.latitude,
+        lng: location.longitude,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (locations && locations?.length >= 2) {
+      const origin = locations[0];
+      const destination = locations[locations.length - 1];
+      const directionsService = new google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin,
+          destination,
+          waypoints:
+            locations.slice(1, locations.length - 1).map((s) => ({
+              location: s,
+            })) ?? undefined,
+          optimizeWaypoints: true,
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+        },
+        (result, status) => {
+          if (status === google.maps.DirectionsStatus.OK) {
+            console.log(result);
+            setDirection(result);
+          } else {
+            console.error(`error fetching directions ${result}`);
+          }
+        }
+      );
+    }
+  }, [locations]);
+
+  const handleRearrange = () => {
+    const temp = [...locations];
+    dispatch(
+      updateLocations({
+        places: temp.sort(function (a, b) {
+          return 0.5 - Math.random();
+        }),
+      })
+    );
+  };
+
   return (
     <>
+      <head>
+        <link
+          href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.css"
+          rel="stylesheet"
+        />
+        <script
+          src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"
+          async
+        ></script>
+      </head>
       <Providers>
         <div className="places-container">
           <PlacesAutocomplete />
+          {/* <SideBar /> */}
         </div>
         <GoogleMap
           zoom={10}
           center={center}
           mapContainerClassName="map-container"
+          options={{
+            disableDefaultUI: true,
+            zoomControl: true,
+          }}
+          onDblClick={async (e) => {
+            e.stop();
+
+            const lat = e.latLng?.lat();
+            const lng = e.latLng?.lng();
+
+            const res = await fetch(
+              `https://geocode.maps.co/reverse?lat=${lat}&lon=${lng}`
+            );
+
+            const data = await res.json();
+
+            console.log("res", data);
+
+            if (lat && lng) {
+              dispatch(
+                fetchLocationPhotos({
+                  place_id: data.place_id,
+                  formatted_address: data.display_name,
+                  types: [],
+                  lat,
+                  lng,
+                  address_components: [data.address],
+                })
+              );
+            }
+          }}
         >
           {locations &&
             locations.map((s) => (
@@ -67,38 +172,106 @@ function Map() {
                 K cha
               </Marker>
             ))}
+          <DirectionsRenderer
+            directions={direction}
+            options={{
+              markerOptions: {
+                visible: true,
+                animation: google.maps.Animation.DROP,
+                title: "Hello",
+              },
+              polylineOptions: {
+                strokeColor: "#000",
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+              },
+            }}
+          />
         </GoogleMap>
         <div id="locations-list" className="absolute z-[999] bottom-2 left-2 ">
+          {/* re arrange */}
+          <button
+            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold"
+            onClick={handleRearrange}
+          >
+            Re-arrange
+          </button>
+          <Dropdown label="Dropdown button">
+            <Dropdown.Item>Dashboard</Dropdown.Item>
+            <Dropdown.Item>Settings</Dropdown.Item>
+            <Dropdown.Item>Earnings</Dropdown.Item>
+            <Dropdown.Item>Sign out</Dropdown.Item>
+          </Dropdown>
           <ul>
             {locations &&
-              locations.map((s) => (
-                <li
-                  key={s.place_id}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
+              locations.map((s, i) => (
+                <>
+                  <li
+                    key={s.place_id}
+                    className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
                   px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-64 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
                   "
-                >
-                  <span
-                    onClick={() => {
-                      console.log(s);
-                      setCenter({ lat: s.lat, lng: s.lng });
-                    }}
                   >
-                    {s.formatted_address}
-                  </span>
-                  <div>
-                    <button
-                      className="bg-red-500
-                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
-                    "
+                    <span
                       onClick={() => {
-                        dispatch(removeLocation({ place_id: s.place_id }));
+                        console.log(s);
+                        setCenter({ lat: s.lat, lng: s.lng });
                       }}
                     >
-                      Delete
-                    </button>
-                  </div>
-                </li>
+                      {s.formatted_address.length > 30
+                        ? s.formatted_address.slice(0, 30) + "..."
+                        : s.formatted_address}
+                    </span>
+                    <div className="flex">
+                      <button
+                        className="bg-red-500
+                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
+                    "
+                        onClick={() => {
+                          dispatch(removeLocation({ place_id: s.place_id }));
+                        }}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        className="
+                    cursor-move text-gray-400 hover:text-gray-600 dark:text-gray-200 dark:hover:text-gray-400 focus:outline-none focus:text-gray-600 dark:focus:text-gray-400 transition duration-150 ease-in-out
+                    "
+                      >
+                        {/* drag icon*/}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          className="w-6 h-6 "
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3.75 9h16.5m-16.5 6.75h16.5"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </li>
+                  {direction &&
+                    direction?.routes.length > 0 &&
+                    direction.routes[0].legs &&
+                    direction.routes[0].legs[i] && (
+                      <li>
+                        <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-64 h-12 items-center overflow-hidden bg-gray-50 border-t-2 dark:bg-gray-800 border-gray-500 rounded my-1 shadow border-dotted">
+                          <span>
+                            {direction.routes[0].legs[i]?.distance.text}
+                          </span>
+                          <span>
+                            {direction.routes[0].legs[i]?.duration.text}
+                          </span>
+                        </div>
+                      </li>
+                    )}
+                </>
               ))}
           </ul>
         </div>
@@ -155,5 +328,268 @@ const PlacesAutocomplete = ({}: {}) => {
         </ComboboxList>
       </ComboboxPopover>
     </Combobox>
+  );
+};
+
+const SideBar = () => {
+  return (
+    <>
+      <div className="text-center">
+        <button
+          className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+          type="button"
+          data-drawer-target="drawer-navigation"
+          data-drawer-show="drawer-navigation"
+          aria-controls="drawer-navigation"
+        >
+          Show navigation
+        </button>
+      </div>
+
+      <div
+        id="drawer-navigation"
+        className="fixed top-0 left-0 z-40 h-screen p-4 overflow-y-auto transition-transform -translate-x-full bg-white w-80 dark:bg-gray-800"
+        tabIndex={-1}
+        aria-labelledby="drawer-navigation-label"
+      >
+        <h5
+          id="drawer-navigation-label"
+          className="text-base font-semibold text-gray-500 uppercase dark:text-gray-400"
+        >
+          Menu
+        </h5>
+        <button
+          type="button"
+          data-drawer-hide="drawer-navigation"
+          aria-controls="drawer-navigation"
+          className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+        >
+          <svg
+            aria-hidden="true"
+            className="w-5 h-5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          <span className="sr-only">Close menu</span>
+        </button>
+        <div className="py-4 overflow-y-auto">
+          <ul className="space-y-2 font-medium">
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
+                </svg>
+                <span className="ml-3">Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                aria-controls="dropdown-example"
+                data-collapse-toggle="dropdown-example"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span className="flex-1 ml-3 text-left whitespace-nowrap">
+                  E-commerce
+                </span>
+                <svg
+                  className="w-6 h-6"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </button>
+              <ul id="dropdown-example" className="hidden py-2 space-y-2">
+                <li>
+                  <a
+                    href="#"
+                    className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    Products
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    Billing
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    Invoice
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                </svg>
+                <span className="flex-1 ml-3 whitespace-nowrap">Kanban</span>
+                <span className="inline-flex items-center justify-center px-2 ml-3 text-sm font-medium text-gray-800 bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-300">
+                  Pro
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
+                  <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
+                </svg>
+                <span className="flex-1 ml-3 whitespace-nowrap">Inbox</span>
+                <span className="inline-flex items-center justify-center w-3 h-3 p-3 ml-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">
+                  3
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span className="flex-1 ml-3 whitespace-nowrap">Users</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span className="flex-1 ml-3 whitespace-nowrap">Products</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span className="flex-1 ml-3 whitespace-nowrap">Sign In</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span className="flex-1 ml-3 whitespace-nowrap">Sign Up</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </>
   );
 };
