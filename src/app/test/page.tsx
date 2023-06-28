@@ -33,10 +33,14 @@ import { Providers } from "../providers";
 import { usePosition } from "@/hooks/useGeoLocation";
 import { Button, Dropdown, Modal } from "flowbite-react";
 import readXlsxFile from "read-excel-file";
-import { BsFillCarFrontFill } from "react-icons/bs";
+import { BsArrowDown, BsFillCarFrontFill } from "react-icons/bs";
 import { BiWalk } from "react-icons/bi";
 import { BsBicycle } from "react-icons/bs";
-import { MdDirectionsTransitFilled, MdSort } from "react-icons/md";
+import {
+  MdDirectionsTransitFilled,
+  MdFileDownload,
+  MdSort,
+} from "react-icons/md";
 import { AiOutlineUpload } from "react-icons/ai";
 
 export default function Places() {
@@ -104,8 +108,8 @@ function Map() {
     });
     if (locations && locations?.length >= 2) {
       const origin = locations[0];
-
-      const destination = locations[locations.length - 1];
+      const destination = origin;
+      // const destination = locations[locations.length - 1];
       const directionsService = new google.maps.DirectionsService();
       directionsService.route(
         {
@@ -206,6 +210,13 @@ function Map() {
     setFileLocations([]);
   };
 
+  const handleDownload = () => {
+    // const data = locations.map((s) => s.formatted_address);
+    // const wb = XLSX.utils.book_new();
+    // const ws = XLSX.utils.json_to_sheet(data);
+    // XLSX.utils.book_append_sheet(wb, ws, "Locations");
+    // XLSX.writeFile(wb, "locations.xlsx");
+  };
   return (
     <>
       <head>
@@ -271,9 +282,11 @@ function Map() {
         >
           {locations &&
             locations.map((s) => (
-              <Marker position={s} key={s.place_id}>
-                K cha
-              </Marker>
+              <Marker
+                position={s}
+                key={s.place_id}
+                title={s.formatted_address}
+              ></Marker>
             ))}
           <DirectionsRenderer
             directions={direction}
@@ -281,7 +294,6 @@ function Map() {
               markerOptions: {
                 visible: true,
                 animation: google.maps.Animation.DROP,
-                title: "Hello",
               },
               polylineOptions: {
                 strokeColor: "#000",
@@ -298,14 +310,14 @@ function Map() {
             directionError={directionError}
           />
 
-          <ul>
+          <ul className="max-h-96 overflow-y-scroll">
             {locations &&
               locations.map((s, i) => (
                 <>
                   <li
                     key={s.place_id}
                     className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
-                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-64 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
+                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
                   "
                   >
                     <span
@@ -356,9 +368,16 @@ function Map() {
                     direction.routes[0].legs &&
                     direction.routes[0].legs[i] && (
                       <li>
-                        <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-64 h-12 items-center overflow-hidden bg-gray-50 border-t-2 dark:bg-gray-800 border-gray-500 rounded my-1 shadow border-dotted">
+                        <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-slate-50 rounded my-1 shadow border-dotted">
                           <span>
                             {direction.routes[0].legs[i]?.distance.text}
+                          </span>
+                          <span
+                            className="
+                          text-green-500 dark:text-green-400 transition duration-150 ease-in-out hover:text-green-600 dark:hover:text-green-500 cursor-pointer
+                          "
+                          >
+                            <BsArrowDown size={21} />
                           </span>
                           <span>
                             {direction.routes[0].legs[i]?.duration.text}
@@ -369,9 +388,9 @@ function Map() {
                 </>
               ))}
           </ul>
-
-          <button
-            className={`
+          <div className="flex gap-2 items-center justify-center py-2  transition-all duration-200 ease-in-out cursor-pointer  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800">
+            <button
+              className={`
           flex gap-2 items-center justify-center bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 transition-all duration-200 ease-in-out cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 ${
             directionError.error ||
             directionError.message === "Please add at least 2 locations" ||
@@ -380,16 +399,38 @@ function Map() {
               : ""
           }
           `}
-            onClick={handleRearrange}
-            disabled={
-              directionError.error ||
-              directionError.message === "Please add at least 2 locations" ||
-              locations.length < 2
-            }
-          >
-            <MdSort size={24} fill="current" />
-            Rearrange
-          </button>
+              onClick={handleRearrange}
+              disabled={
+                directionError.error ||
+                directionError.message === "Please add at least 2 locations" ||
+                locations.length < 2
+              }
+            >
+              <MdSort size={24} fill="current" />
+              Rearrange
+            </button>
+            {/* download formatted maps and direction data */}
+            <button
+              className={`
+          flex gap-2 items-center justify-center bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 transition-all duration-200 ease-in-out cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 ${
+            directionError.error ||
+            directionError.message === "Please add at least 2 locations" ||
+            locations.length < 2
+              ? "opacity-50 cursor-not-allowed"
+              : ""
+          }
+          `}
+              onClick={handleDownload}
+              disabled={
+                directionError.error ||
+                directionError.message === "Please add at least 2 locations" ||
+                locations.length < 2
+              }
+            >
+              <MdFileDownload size={24} fill="current" />
+              Download
+            </button>
+          </div>
           <p className="text-xs text-gray-700 mb-7">
             Sort places by minial distance travelled
           </p>
@@ -446,7 +487,7 @@ function Map() {
                       <li
                         key={s.place_id}
                         className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
-                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-64 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
+                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
                   "
                       >
                         {s.formatted_address.length > 30
@@ -574,9 +615,7 @@ const ModeOfTransport = ({
       )}
       <div
         className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
-          mode === "DRIVING"
-            ? "bg-slate-800 text-white"
-            : "border-r border-gray-100"
+          mode === "DRIVING" ? "bg-slate-800 text-white" : " border-gray-100"
         }`}
         onClick={() => setMode("DRIVING")}
       >
@@ -584,9 +623,7 @@ const ModeOfTransport = ({
       </div>
       <div
         className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
-          mode === "WALKING"
-            ? "bg-slate-800 text-white"
-            : "border-r border-gray-100"
+          mode === "WALKING" ? "bg-slate-800 text-white" : ""
         }`}
         onClick={() => setMode("WALKING")}
       >
@@ -594,9 +631,7 @@ const ModeOfTransport = ({
       </div>
       <div
         className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
-          mode === "BICYCLING"
-            ? "bg-slate-800 text-white"
-            : "border-r border-gray-100"
+          mode === "BICYCLING" ? "bg-slate-800 text-white" : ""
         }`}
         onClick={() => setMode("BICYCLING")}
       >
@@ -604,9 +639,7 @@ const ModeOfTransport = ({
       </div>
       <div
         className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
-          mode === "TRANSIT"
-            ? "bg-slate-800 text-white"
-            : "border-r border-gray-100"
+          mode === "TRANSIT" ? "bg-slate-800 text-white" : ""
         }`}
         onClick={() => setMode("TRANSIT")}
       >
