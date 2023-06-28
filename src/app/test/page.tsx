@@ -108,8 +108,8 @@ function Map() {
     });
     if (locations && locations?.length >= 2) {
       const origin = locations[0];
-      const destination = origin;
-      // const destination = locations[locations.length - 1];
+      // const destination = origin;
+      const destination = locations[locations.length - 1];
       const directionsService = new google.maps.DirectionsService();
       directionsService.route(
         {
@@ -424,7 +424,8 @@ function Map() {
               disabled={
                 directionError.error ||
                 directionError.message === "Please add at least 2 locations" ||
-                locations.length < 2
+                locations.length < 2 ||
+                true
               }
             >
               <MdFileDownload size={24} fill="current" />
