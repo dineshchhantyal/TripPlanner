@@ -39,6 +39,7 @@ import { BsBicycle } from "react-icons/bs";
 import {
   MdDirectionsTransitFilled,
   MdFileDownload,
+  MdOpenInNew,
   MdSort,
 } from "react-icons/md";
 import {
@@ -565,7 +566,7 @@ function Map() {
                           d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                         ></path>
                       </svg>
-                      <p className="lowercase text-sm text-gray-400 group-hover:text-blue-600 pt-1 tracking-wider">
+                      <p className="lowercase text-sm text-gray-400 group-hover:text-blue-600 pt-1 tracking-wider cursor-pointer_">
                         Select a file
                       </p>
                     </div>
@@ -621,27 +622,45 @@ const ModeOfTransport = ({
 
   const [open, setOpen] = useState(false);
 
+  const handleOpen = () => {
+    const win = window.open("");
+    if (win) {
+      win.document.write(document.getElementById("panel")?.innerHTML || "");
+    }
+  };
+
   return (
     <div className="relative w-full">
       {locations && locations.length > 1 && (
-        <div>
-          <div
-            className="absolute right-1/2 -top-1 -mt-2 -mr-2 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 p-2 rounded text-xs font-bold cursor-pointer translate-x-1/2 -translate-y-1/2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all
+        <>
+          <div>
+            <div
+              className="absolute right-1/2 -top-1 -mt-2 -mr-2 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 p-2 rounded text-xs font-bold cursor-pointer translate-x-1/2 -translate-y-1/2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all
           "
-          >
-            {open ? (
-              <AiOutlineArrowDown onClick={() => setOpen(!open)} />
-            ) : (
-              <AiOutlineArrowUp onClick={() => setOpen(!open)} />
-            )}
-          </div>
-          <div
-            id="panel"
-            className={`bg-white dark:bg-gray-800 shadow-md rounded-md p-2 w-72  overflow-y-scroll transition-all
-            ${open ? "h-96 opacity-100" : "h-0 opacity-0"}
+            >
+              {open ? (
+                <AiOutlineArrowDown onClick={() => setOpen(!open)} />
+              ) : (
+                <AiOutlineArrowUp onClick={() => setOpen(!open)} />
+              )}
+            </div>
+            <div
+              id="panel"
+              className={`bg-white dark:bg-gray-800 shadow-md rounded-md p-2 w-72 mb-1 overflow-y-scroll transition-all
+            ${open ? "h-40 opacity-100" : "h-0 opacity-0"}
             `}
-          ></div>
-        </div>
+            >
+              <span
+                className={`
+              block cursor-pointer w-max hover:bg-gray-100 dark:hover:bg-gray-700 transition-all rounded p-2
+            `}
+                onClick={() => handleOpen()}
+              >
+                <MdOpenInNew />
+              </span>
+            </div>
+          </div>
+        </>
       )}
       <div className="w-full justify-between bg-white border rounded flex transition-all">
         {directionError.error && (
