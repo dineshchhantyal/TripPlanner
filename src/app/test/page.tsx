@@ -33,7 +33,11 @@ import { Providers } from "../providers";
 import { usePosition } from "@/hooks/useGeoLocation";
 import { Button, Dropdown, Modal } from "flowbite-react";
 import readXlsxFile from "read-excel-file";
-import { fetchAboutPlace } from "@/states/slices/placesSlice";
+import { BsFillCarFrontFill } from "react-icons/bs";
+import { BiWalk } from "react-icons/bi";
+import { BsBicycle } from "react-icons/bs";
+import { MdDirectionsTransitFilled, MdSort } from "react-icons/md";
+import { AiOutlineUpload } from "react-icons/ai";
 
 export default function Places() {
   const { isLoaded, loadError } = useLoadScript({
@@ -50,9 +54,8 @@ function Map() {
   const [center, setCenter] = useState<{
     lat: number;
     lng: number;
-  }>({ lat: 0, lng: 0 });
+  }>({ lat: location.latitude, lng: location.longitude });
   const locations = useAppSelector((state) => state.searchLocation.places);
-  console.log("locations : ", locations);
   const dispatch = useAppDispatch();
   const [openModal, setOpenModal] = useState<string | undefined>();
   const [direction, setDirection] = useState<any>(null);
@@ -66,6 +69,17 @@ function Map() {
       types: string[];
     }[]
   >([]);
+  const [mode, setMode] = useState<
+    "DRIVING" | "WALKING" | "BICYCLING" | "BICYCLING" | "TRANSIT"
+  >("DRIVING");
+  const [directionError, setDirectionError] = useState<{
+    message: string;
+    error: boolean;
+  }>({
+    message: "",
+    error: false,
+  });
+
   const [fileLoadingError, setFileLoadingError] = useState<{
     message: string;
     error: boolean;
@@ -84,17 +98,13 @@ function Map() {
   }, [locations]);
 
   useEffect(() => {
-    if (location) {
-      setCenter({
-        lat: location.latitude,
-        lng: location.longitude,
-      });
-    }
-  }, []);
-
-  useEffect(() => {
+    setDirectionError({
+      message: "",
+      error: false,
+    });
     if (locations && locations?.length >= 2) {
       const origin = locations[0];
+
       const destination = locations[locations.length - 1];
       const directionsService = new google.maps.DirectionsService();
       directionsService.route(
@@ -106,19 +116,22 @@ function Map() {
               location: s,
             })) ?? undefined,
           optimizeWaypoints: true,
-          travelMode: google.maps.TravelMode.DRIVING,
+          travelMode: google.maps.TravelMode[mode],
           unitSystem: google.maps.UnitSystem.METRIC,
         },
         (result, status) => {
           if (status === google.maps.DirectionsStatus.OK) {
             setDirection(result);
           } else {
-            console.error(`error fetching directions ${result}`);
+            setDirectionError({
+              message: "Unable to find directions.",
+              error: true,
+            });
           }
         }
       );
     }
-  }, [locations]);
+  }, [locations, mode]);
 
   const handleRearrange = () => {
     const temp = [...locations];
@@ -206,9 +219,21 @@ function Map() {
         ></script>
       </head>
       <Providers>
-        <div className="places-container">
+        <div className="places-container flex gap-2">
           <PlacesAutocomplete />
           {/* <SideBar /> */}
+          <button
+            className="
+            flex gap-2 items-center justify-center bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 transition-all duration-200 ease-in-out cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white
+            "
+            onClick={() => {
+              handleImportLocations();
+              setOpenModal(() => "default");
+            }}
+          >
+            <p>Import</p>
+            <AiOutlineUpload />
+          </button>
         </div>
         <GoogleMap
           zoom={10}
@@ -267,28 +292,12 @@ function Map() {
           />
         </GoogleMap>
         <div id="locations-list" className="absolute z-[999] bottom-2 left-2 ">
-          <Dropdown label="Dropdown button">
-            <Dropdown.Item>Dashboard</Dropdown.Item>
-            <Dropdown.Item>Settings</Dropdown.Item>
-            <Dropdown.Item>Earnings</Dropdown.Item>
-            <Dropdown.Item>Sign out</Dropdown.Item>
-          </Dropdown>
-          <button
-            className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold"
-            onClick={() => {
-              handleImportLocations();
-              setOpenModal(() => "default");
-            }}
-          >
-            Import
-          </button>
-          {/* re arrange */}
-          <button
-            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold"
-            onClick={handleRearrange}
-          >
-            Re-arrange
-          </button>
+          <ModeOfTransport
+            mode={mode}
+            setMode={setMode}
+            directionError={directionError}
+          />
+
           <ul>
             {locations &&
               locations.map((s, i) => (
@@ -360,6 +369,30 @@ function Map() {
                 </>
               ))}
           </ul>
+
+          <button
+            className={`
+          flex gap-2 items-center justify-center bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 transition-all duration-200 ease-in-out cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 ${
+            directionError.error ||
+            directionError.message === "Please add at least 2 locations" ||
+            locations.length < 2
+              ? "opacity-50 cursor-not-allowed"
+              : ""
+          }
+          `}
+            onClick={handleRearrange}
+            disabled={
+              directionError.error ||
+              directionError.message === "Please add at least 2 locations" ||
+              locations.length < 2
+            }
+          >
+            <MdSort size={24} fill="current" />
+            Rearrange
+          </button>
+          <p className="text-xs text-gray-700 mb-7">
+            Sort places by minial distance travelled
+          </p>
         </div>
         <Modal
           show={openModal === "default"}
@@ -521,6 +554,80 @@ function Map() {
   );
 }
 
+const ModeOfTransport = ({
+  mode,
+  setMode,
+  directionError,
+}: {
+  mode: string;
+  setMode: React.Dispatch<
+    React.SetStateAction<"DRIVING" | "WALKING" | "BICYCLING" | "TRANSIT">
+  >;
+  directionError: { error: boolean; message: string };
+}) => (
+  <div className="relative w-full">
+    <div className="w-full justify-between bg-white border rounded flex transition-all">
+      {directionError.error && (
+        <div className="absolute -top-4 right-0 -mt-2 -mr-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+          {directionError.message}
+        </div>
+      )}
+      <div
+        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
+          mode === "DRIVING"
+            ? "bg-slate-800 text-white"
+            : "border-r border-gray-100"
+        }`}
+        onClick={() => setMode("DRIVING")}
+      >
+        <BsFillCarFrontFill size={24} />
+      </div>
+      <div
+        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
+          mode === "WALKING"
+            ? "bg-slate-800 text-white"
+            : "border-r border-gray-100"
+        }`}
+        onClick={() => setMode("WALKING")}
+      >
+        <BiWalk size={24} />
+      </div>
+      <div
+        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
+          mode === "BICYCLING"
+            ? "bg-slate-800 text-white"
+            : "border-r border-gray-100"
+        }`}
+        onClick={() => setMode("BICYCLING")}
+      >
+        <BsBicycle size={24} />
+      </div>
+      <div
+        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
+          mode === "TRANSIT"
+            ? "bg-slate-800 text-white"
+            : "border-r border-gray-100"
+        }`}
+        onClick={() => setMode("TRANSIT")}
+      >
+        <MdDirectionsTransitFilled size={24} />
+      </div>
+    </div>
+
+    {/* <select
+      className="peer h-full w-full rounded-[7px] border border-blue-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 empty:!bg-red-500 focus:border-2 focus:border-pink-500 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50"
+      onChange={(e) => setMode(e.target.value as any)}
+    >
+      <option value="DRIVING">Driving</option>
+      <option value="WALKING">Walking</option>
+      <option value="BICYCLING">Cycling</option>
+      <option value="TRANSIT">Transit</option>
+    </select> */}
+    <label className="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none text-[11px] font-normal leading-tight text-blue-gray-400 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-blue-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-pink-500 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:border-pink-500 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:border-pink-500 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500">
+      Select a mode
+    </label>
+  </div>
+);
 const PlacesAutocomplete = ({}: {}) => {
   const {
     ready,
