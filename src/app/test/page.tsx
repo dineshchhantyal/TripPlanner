@@ -258,6 +258,10 @@ function Map() {
           options={{
             disableDefaultUI: true,
             zoomControl: true,
+            keyboardShortcuts: true,
+            tilt: 45,
+            mapTypeControl: true,
+            noClear: false,
           }}
           onDblClick={async (e) => {
             e.stop();
@@ -297,7 +301,7 @@ function Map() {
               </Marker>
             ))}
           <DirectionsRenderer
-            directions={direction}
+            directions={directionError.error ? undefined : direction}
             options={{
               markerOptions: {
                 visible: true,
@@ -374,7 +378,8 @@ function Map() {
                       </button>
                     </div>
                   </li>
-                  {direction &&
+                  {!directionError.error &&
+                    direction &&
                     direction?.routes.length > 0 &&
                     direction.routes[0].legs &&
                     direction.routes[0].legs[i] && (
@@ -545,7 +550,7 @@ function Map() {
                 )}
                 <div className="flex items-center justify-center">
                   <label className="flex flex-col border-4 border-dashed w-full h-32 hover:bg-gray-100 hover:border-blue-300 group">
-                    <div className="flex flex-col items-center justify-center pt-7">
+                    <div className="flex flex-col items-center justify-center pt-7  cursor-pointer">
                       {fileLoadingError.error && (
                         <p className="text-red-500 text-xs italic">
                           {fileLoadingError.message}
@@ -566,7 +571,7 @@ function Map() {
                           d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                         ></path>
                       </svg>
-                      <p className="lowercase text-sm text-gray-400 group-hover:text-blue-600 pt-1 tracking-wider cursor-pointer_">
+                      <p className="lowercase text-sm text-gray-400 group-hover:text-blue-600 pt-1 tracking-wider">
                         Select a file
                       </p>
                     </div>
@@ -631,7 +636,7 @@ const ModeOfTransport = ({
 
   return (
     <div className="relative w-full">
-      {locations && locations.length > 1 && (
+      {!directionError.error && locations && locations.length > 1 && (
         <>
           <div>
             <div
@@ -701,19 +706,6 @@ const ModeOfTransport = ({
           <MdDirectionsTransitFilled size={24} />
         </div>
       </div>
-
-      {/* <select
-      className="peer h-full w-full rounded-[7px] border border-blue-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 empty:!bg-red-500 focus:border-2 focus:border-pink-500 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50"
-      onChange={(e) => setMode(e.target.value as any)}
-    >
-      <option value="DRIVING">Driving</option>
-      <option value="WALKING">Walking</option>
-      <option value="BICYCLING">Cycling</option>
-      <option value="TRANSIT">Transit</option>
-    </select> */}
-      {/* <label className="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none text-[11px] font-normal leading-tight text-blue-gray-400 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-blue-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-pink-500 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:border-pink-500 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:border-pink-500 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500">
-        Select a mode
-      </label> */}
     </div>
   );
 };
