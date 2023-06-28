@@ -286,19 +286,14 @@ function Map() {
         >
           {locations &&
             locations.map((s) => (
-              <Marker
-                position={s}
-                key={s.place_id}
-                title={s.formatted_address}
-                children={
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-semibold">
-                      {s.formatted_address} K Chas
-                    </p>
-                    <p className="text-xs">{s.types.join(", ")}</p>
-                  </div>
-                }
-              ></Marker>
+              <Marker position={s} key={s.place_id} title={s.formatted_address}>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-semibold">
+                    {s.formatted_address} K Chas
+                  </p>
+                  <p className="text-xs">{s.types.join(", ")}</p>
+                </div>
+              </Marker>
             ))}
           <DirectionsRenderer
             directions={direction}
