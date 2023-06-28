@@ -41,7 +41,11 @@ import {
   MdFileDownload,
   MdSort,
 } from "react-icons/md";
-import { AiOutlineUpload } from "react-icons/ai";
+import {
+  AiOutlineArrowDown,
+  AiOutlineArrowUp,
+  AiOutlineUpload,
+} from "react-icons/ai";
 
 export default function Places() {
   const { isLoaded, loadError } = useLoadScript({
@@ -286,6 +290,14 @@ function Map() {
                 position={s}
                 key={s.place_id}
                 title={s.formatted_address}
+                children={
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-semibold">
+                      {s.formatted_address} K Chas
+                    </p>
+                    <p className="text-xs">{s.types.join(", ")}</p>
+                  </div>
+                }
               ></Marker>
             ))}
           <DirectionsRenderer
@@ -301,8 +313,11 @@ function Map() {
                 strokeWeight: 2,
               },
             }}
+            // show distance and duration
+            panel={document.getElementById("panel") as HTMLElement}
           />
         </GoogleMap>
+
         <div id="locations-list" className="absolute z-[999] bottom-2 left-2 ">
           <ModeOfTransport
             mode={mode}
@@ -606,49 +621,74 @@ const ModeOfTransport = ({
     React.SetStateAction<"DRIVING" | "WALKING" | "BICYCLING" | "TRANSIT">
   >;
   directionError: { error: boolean; message: string };
-}) => (
-  <div className="relative w-full">
-    <div className="w-full justify-between bg-white border rounded flex transition-all">
-      {directionError.error && (
-        <div className="absolute -top-4 right-0 -mt-2 -mr-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-          {directionError.message}
+}) => {
+  const locations = useAppSelector((state) => state.searchLocation.places);
+
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative w-full">
+      {locations && locations.length > 1 && (
+        <div>
+          <div
+            className="absolute right-1/2 -top-1 -mt-2 -mr-2 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 p-2 rounded text-xs font-bold cursor-pointer translate-x-1/2 -translate-y-1/2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all
+          "
+          >
+            {open ? (
+              <AiOutlineArrowDown onClick={() => setOpen(!open)} />
+            ) : (
+              <AiOutlineArrowUp onClick={() => setOpen(!open)} />
+            )}
+          </div>
+          <div
+            id="panel"
+            className={`bg-white dark:bg-gray-800 shadow-md rounded-md p-2 w-72  overflow-y-scroll transition-all
+            ${open ? "h-96 opacity-100" : "h-0 opacity-0"}
+            `}
+          ></div>
         </div>
       )}
-      <div
-        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
-          mode === "DRIVING" ? "bg-slate-800 text-white" : " border-gray-100"
-        }`}
-        onClick={() => setMode("DRIVING")}
-      >
-        <BsFillCarFrontFill size={24} />
+      <div className="w-full justify-between bg-white border rounded flex transition-all">
+        {directionError.error && (
+          <div className="absolute -top-4 right-0 -mt-2 -mr-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+            {directionError.message}
+          </div>
+        )}
+        <div
+          className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
+            mode === "DRIVING" ? "bg-slate-800 text-white" : " border-gray-100"
+          }`}
+          onClick={() => setMode("DRIVING")}
+        >
+          <BsFillCarFrontFill size={24} />
+        </div>
+        <div
+          className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
+            mode === "WALKING" ? "bg-slate-800 text-white" : ""
+          }`}
+          onClick={() => setMode("WALKING")}
+        >
+          <BiWalk size={24} />
+        </div>
+        <div
+          className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
+            mode === "BICYCLING" ? "bg-slate-800 text-white" : ""
+          }`}
+          onClick={() => setMode("BICYCLING")}
+        >
+          <BsBicycle size={24} />
+        </div>
+        <div
+          className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
+            mode === "TRANSIT" ? "bg-slate-800 text-white" : ""
+          }`}
+          onClick={() => setMode("TRANSIT")}
+        >
+          <MdDirectionsTransitFilled size={24} />
+        </div>
       </div>
-      <div
-        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
-          mode === "WALKING" ? "bg-slate-800 text-white" : ""
-        }`}
-        onClick={() => setMode("WALKING")}
-      >
-        <BiWalk size={24} />
-      </div>
-      <div
-        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white  ${
-          mode === "BICYCLING" ? "bg-slate-800 text-white" : ""
-        }`}
-        onClick={() => setMode("BICYCLING")}
-      >
-        <BsBicycle size={24} />
-      </div>
-      <div
-        className={`p-4 cursor-pointer hover:bg-slate-600 transition-all rounded hover:text-white ${
-          mode === "TRANSIT" ? "bg-slate-800 text-white" : ""
-        }`}
-        onClick={() => setMode("TRANSIT")}
-      >
-        <MdDirectionsTransitFilled size={24} />
-      </div>
-    </div>
 
-    {/* <select
+      {/* <select
       className="peer h-full w-full rounded-[7px] border border-blue-gray-200 border-t-transparent bg-transparent px-3 py-2.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 empty:!bg-red-500 focus:border-2 focus:border-pink-500 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50"
       onChange={(e) => setMode(e.target.value as any)}
     >
@@ -657,11 +697,12 @@ const ModeOfTransport = ({
       <option value="BICYCLING">Cycling</option>
       <option value="TRANSIT">Transit</option>
     </select> */}
-    <label className="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none text-[11px] font-normal leading-tight text-blue-gray-400 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-blue-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-pink-500 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:border-pink-500 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:border-pink-500 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500">
-      Select a mode
-    </label>
-  </div>
-);
+      {/* <label className="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none text-[11px] font-normal leading-tight text-blue-gray-400 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-blue-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-pink-500 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:border-pink-500 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:border-pink-500 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500">
+        Select a mode
+      </label> */}
+    </div>
+  );
+};
 const PlacesAutocomplete = ({}: {}) => {
   const {
     ready,
