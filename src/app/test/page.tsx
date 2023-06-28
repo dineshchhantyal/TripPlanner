@@ -733,7 +733,7 @@ const PlacesAutocomplete = ({}: {}) => {
   };
 
   return (
-    <Combobox onSelect={handleSelect}>
+    <Combobox onSelect={handleSelect} className="relative">
       <ComboboxInput
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -741,7 +741,10 @@ const PlacesAutocomplete = ({}: {}) => {
         className="combobox-input rounded"
         placeholder="Search an address"
       />
-      <ComboboxPopover>
+      <p className="absolute text-xs font-bold text-gray-600 -z-50">
+        Select to add a new location
+      </p>
+      <ComboboxPopover className="z-10">
         <ComboboxList>
           {status === "OK" &&
             data.map(({ place_id, description }) => (
