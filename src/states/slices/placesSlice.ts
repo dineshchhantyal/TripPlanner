@@ -105,7 +105,6 @@ export function fetchAboutPlace(place: Prediction) {
       );
       const images = await response.json();
       const about = await coordinate.json();
-      console.log(about);
       dispatch(
         addPlace({
           place: {
