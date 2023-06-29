@@ -2,6 +2,7 @@ import { Prediction } from "@/components/SearchBar/SearchBar";
 import { SearchLocation } from "@/types/SearchLocation";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Photo } from "./placesSlice";
+import { stat } from "fs";
 
 export interface Location extends SearchLocation {
   lat: number;
@@ -59,13 +60,27 @@ export const searchLocationSlice = createSlice({
 
       state.places = p;
     },
+    sortLocations: (
+      state,
+      action: PayloadAction<{
+        waypoints_order: number[];
+      }>
+    ) => {
+      const { waypoints_order } = action.payload;
+      const newPlaces = [
+        state.places[0],
+        ...waypoints_order.map((i) => state.places[i]),
+      ];
+
+      state.places = newPlaces;
+    },
   },
   extraReducers: {
     // Add reducers for additional action types here, and handle loading state as needed
   },
 });
 
-export const { updateLocations, addLocation, removeLocation } =
+export const { updateLocations, addLocation, removeLocation, sortLocations } =
   searchLocationSlice.actions;
 
 export default searchLocationSlice.reducer;
