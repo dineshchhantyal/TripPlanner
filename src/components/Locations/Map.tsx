@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
-import { GoogleMap, Marker, DirectionsRenderer } from "@react-google-maps/api";
+import { GoogleMap, DirectionsRenderer } from "@react-google-maps/api";
 
 import "@reach/combobox/styles.css";
 
 import { useAppDispatch, useAppSelector } from "@/states/hooks";
-import { fetchLocationPhotos } from "@/states/slices/searchSlice";
+import {
+  fetchLocationPhotos,
+  updateEndPlace,
+  updateStartPlace,
+  updateWaypointsOrder,
+} from "@/states/slices/searchSlice";
 import { usePosition } from "@/hooks/useGeoLocation";
 
 import { AiFillDelete, AiOutlineUpload } from "react-icons/ai";
@@ -14,6 +19,7 @@ import SideBar from "../Sidebar/MapSidebar";
 import { Button, Modal } from "flowbite-react";
 import readXlsxFile from "read-excel-file";
 import { getGeocode, getLatLng } from "use-places-autocomplete";
+import { updatePlaces } from "@/states/slices/placesSlice";
 
 function Map() {
   const { error, ...location } = usePosition();
@@ -25,7 +31,8 @@ function Map() {
   const dispatch = useAppDispatch();
   const [direction, setDirection] = useState<any>(null);
   const [openModal, setOpenModal] = useState<string | undefined>();
-  const [waypointsOrder, setWaypointsOrder] = useState<number[]>([]);
+  const places = useAppSelector((state) => state.searchLocation);
+
   const [mode, setMode] = useState<
     "DRIVING" | "WALKING" | "BICYCLING" | "BICYCLING" | "TRANSIT"
   >("DRIVING");
@@ -71,9 +78,13 @@ function Map() {
     });
     setDirection(null);
     if (locations && locations?.length >= 2) {
-      const origin = locations[0];
-      console.log(locations);
-      const destination = origin;
+      const origin = places.start
+        ? locations.find((s) => s.place_id === places.start) ?? locations[0]
+        : locations[0];
+
+      const destination = places.end
+        ? locations.find((s) => s.place_id === places.end) ?? locations[0]
+        : locations[0];
       // const destination = locations[locations.length - 1];
       const directionsService = new google.maps.DirectionsService();
       directionsService.route(
@@ -81,9 +92,14 @@ function Map() {
           origin,
           destination,
           waypoints:
-            locations.slice(1).map((s) => ({
-              location: s,
-            })) ?? undefined,
+            locations
+              .filter(
+                (l) => l.place_id !== places?.end || l.place_id !== places.start
+              )
+              .map((l) => ({
+                location: l,
+                stopover: true,
+              })) ?? [],
           optimizeWaypoints: true,
           travelMode: google.maps.TravelMode[mode],
           unitSystem: google.maps.UnitSystem.METRIC,
@@ -92,7 +108,11 @@ function Map() {
           if (status === google.maps.DirectionsStatus.OK) {
             setDirection(result);
 
-            setWaypointsOrder(result?.routes[0]?.waypoint_order ?? []);
+            dispatch(
+              updateWaypointsOrder({
+                waypoints_order: result?.routes[0]?.waypoint_order ?? [],
+              })
+            );
           } else {
             setDirectionError({
               message: "Unable to find directions.",
@@ -104,6 +124,19 @@ function Map() {
     }
   }, [locations, mode]);
   const handleImportLocations = () => {
+    if (fileLocations.length < 1) {
+      return;
+    }
+    dispatch(
+      updateStartPlace({
+        place_id: fileLocations[0].place_id,
+      })
+    );
+    dispatch(
+      updateEndPlace({
+        place_id: fileLocations[0].place_id,
+      })
+    );
     for (let i = 0; i < fileLocations.length; i++) {
       const place = fileLocations[i];
       dispatch(
@@ -229,60 +262,16 @@ function Map() {
             }
           }}
         >
-          {/* {locations &&
-            locations.map((place) => (
-              <Marker
-                position={place}
-                key={place.place_id}
-                title={place.formatted_address}
-              >
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-semibold">
-                    {place.formatted_address}
-                  </p>
-                  <p className="text-xs">{place.types.join(", ")}</p>
-                </div>
-              </Marker>
-            ))} */}
-          {locations.at(0) && (
-            <Marker
-              position={locations[0]}
-              key={locations[0].place_id}
-              title={locations[0].formatted_address}
-            >
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold">
-                  {locations[0].formatted_address}
-                </p>
-                <p className="text-xs">{locations[0].types.join(", ")}</p>
-              </div>
-            </Marker>
-          )}
-
-          {waypointsOrder.length > 0 &&
-            waypointsOrder.map((waypoint: number) => (
-              <Marker
-                position={locations[waypoint + 1]}
-                key={locations[waypoint + 1].place_id}
-                title={locations[waypoint + 1].formatted_address}
-              >
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-semibold">
-                    {locations[waypoint + 1].formatted_address}
-                  </p>
-                  <p className="text-xs">
-                    {locations[waypoint + 1].types.join(", ")}
-                  </p>
-                </div>
-              </Marker>
-            ))}
-
           <DirectionsRenderer
             directions={directionError.error ? undefined : direction}
             options={{
               markerOptions: {
                 visible: true,
                 animation: google.maps.Animation.DROP,
+                anchorPoint: new google.maps.Point(0, -29),
+                collisionBehavior:
+                  google.maps.CollisionBehavior
+                    .OPTIONAL_AND_HIDES_LOWER_PRIORITY,
               },
               polylineOptions: {
                 strokeColor: "#000",
@@ -301,8 +290,6 @@ function Map() {
           mode={mode}
           setMode={setMode}
           setCenter={setCenter}
-          waypointsOrder={waypointsOrder}
-          key={waypointsOrder.join("")}
         />
 
         <Modal

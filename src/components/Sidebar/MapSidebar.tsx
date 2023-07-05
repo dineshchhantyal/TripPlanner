@@ -1,7 +1,12 @@
 import "@reach/combobox/styles.css";
 
 import { useAppDispatch, useAppSelector } from "@/states/hooks";
-import { removeLocation, updateLocations } from "@/states/slices/searchSlice";
+import {
+  removeLocation,
+  removeWaypoint,
+  updateLocations,
+  updateWaypointsOrder,
+} from "@/states/slices/searchSlice";
 
 import { BsArrowDown } from "react-icons/bs";
 import { MdFileDownload, MdSort } from "react-icons/md";
@@ -14,7 +19,6 @@ const SideBar = ({
   directionError,
   setCenter,
   direction,
-  waypointsOrder,
 }: {
   mode: string;
   setMode: React.Dispatch<
@@ -28,9 +32,11 @@ const SideBar = ({
     }>
   >;
   direction: google.maps.DirectionsResult | undefined;
-  waypointsOrder: number[];
 }) => {
   const locations = useAppSelector((state) => state.searchLocation.places);
+  const waypoints = useAppSelector(
+    (state) => state.searchLocation.waypoints_order
+  );
   const dispatch = useAppDispatch();
 
   const handleRearrange = () => {
@@ -43,14 +49,6 @@ const SideBar = ({
       })
     );
   };
-  console.log(waypointsOrder);
-  locations.forEach((s, i) => {
-    if (i === 0) {
-      console.log(s);
-    } else {
-      console.log(locations[waypointsOrder[i - 1] + 1]);
-    }
-  });
 
   const handleDownload = () => {};
   return (
@@ -63,8 +61,8 @@ const SideBar = ({
         />
 
         <ul className="max-h-96 overflow-y-scroll">
-          {/* if waypointsOrder is empty then print all continously else print based on first point followed by waypointOrder */}
-          {waypointsOrder.length === 0 ? (
+          {/* if waypointsOrder is empty then print all continuously else print based on first point followed by waypointOrder */}
+          {waypoints?.length === 0 ? (
             locations.map((location, index) => (
               <li key={location.place_id}>
                 <div
@@ -151,7 +149,7 @@ const SideBar = ({
                   </li>
                 )}
 
-              {waypointsOrder.map((s, i) => (
+              {waypoints?.map((s, i) => (
                 <>
                   <li
                     key={locations[s + 1].place_id}
@@ -182,6 +180,9 @@ const SideBar = ({
                             removeLocation({
                               place_id: locations[s + 1].place_id,
                             })
+                          );
+                          dispatch(
+                            updateWaypointsOrder({ waypoints_order: [] })
                           );
                         }}
                       >
@@ -232,20 +233,6 @@ const SideBar = ({
                   ? locations[0].formatted_address.slice(0, 30) + "..."
                   : locations[0].formatted_address}
               </span>
-              <div className="flex">
-                <button
-                  className="bg-red-500
-                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
-                    "
-                  onClick={() => {
-                    dispatch(
-                      removeLocation({ place_id: locations[0].place_id })
-                    );
-                  }}
-                >
-                  <AiFillDelete />
-                </button>
-              </div>
             </li>
           )}
         </ul>

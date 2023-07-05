@@ -12,10 +12,16 @@ export interface Location extends SearchLocation {
 
 interface IPlaces {
   places: Location[];
+  waypoints_order?: number[];
+  start: string | undefined; // place_id
+  end: string | undefined; // place_id
 }
 
 const initialState: IPlaces = {
   places: [],
+  waypoints_order: [],
+  start: undefined,
+  end: undefined,
 };
 
 export const searchLocationSlice = createSlice({
@@ -48,6 +54,24 @@ export const searchLocationSlice = createSlice({
       }
     },
 
+    updateStartPlace: (
+      state,
+      action: PayloadAction<{
+        place_id: string;
+      }>
+    ) => {
+      const { place_id } = action.payload;
+      state.start = place_id;
+    },
+    updateEndPlace: (
+      state,
+      action: PayloadAction<{
+        place_id: string;
+      }>
+    ) => {
+      const { place_id } = action.payload;
+      state.end = place_id;
+    },
     removeLocation: (
       state,
       action: PayloadAction<{
@@ -74,14 +98,41 @@ export const searchLocationSlice = createSlice({
 
       state.places = newPlaces;
     },
+    updateWaypointsOrder: (
+      state,
+      action: PayloadAction<{
+        waypoints_order: number[];
+      }>
+    ) => {
+      const { waypoints_order } = action.payload;
+      state.waypoints_order = waypoints_order;
+    },
+    removeWaypoint: (
+      state,
+      action: PayloadAction<{
+        index: number;
+      }>
+    ) => {
+      const { index } = action.payload;
+      const new_points = state.waypoints_order?.filter((_, i) => i !== index);
+      state.waypoints_order = new_points;
+    },
   },
   extraReducers: {
     // Add reducers for additional action types here, and handle loading state as needed
   },
 });
 
-export const { updateLocations, addLocation, removeLocation, sortLocations } =
-  searchLocationSlice.actions;
+export const {
+  updateLocations,
+  addLocation,
+  removeLocation,
+  sortLocations,
+  updateWaypointsOrder,
+  removeWaypoint,
+  updateStartPlace,
+  updateEndPlace,
+} = searchLocationSlice.actions;
 
 export default searchLocationSlice.reducer;
 
