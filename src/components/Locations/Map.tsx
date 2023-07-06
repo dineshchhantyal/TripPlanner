@@ -124,6 +124,7 @@ function Map() {
     }
   }, [locations, mode]);
   const handleImportLocations = () => {
+    console.log("File locations", fileLocations);
     if (fileLocations.length < 1) {
       return;
     }

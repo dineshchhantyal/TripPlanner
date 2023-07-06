@@ -145,16 +145,15 @@ export function fetchLocationPhotos(place: Location) {
     getState: any
   ) {
     try {
-      const response = await fetch(
-        `/api/images?query=${place.formatted_address}`
-      );
+      // const response = await fetch(
+      //   `/api/images?query=${place.formatted_address}`
+      // );
 
-      const images = await response.json();
+      // const images = await response.json();
       dispatch(
         addLocation({
           place: {
             ...place,
-            photos: images.photos,
           },
         })
       );
