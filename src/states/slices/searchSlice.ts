@@ -117,6 +117,12 @@ export const searchLocationSlice = createSlice({
       const new_points = state.waypoints_order?.filter((_, i) => i !== index);
       state.waypoints_order = new_points;
     },
+    randomSort: (state) => {
+      const newPlaces = state.places.sort(() => Math.random() - 0.5);
+      state.places = newPlaces;
+      state.start = newPlaces[0].place_id;
+      state.end = newPlaces[newPlaces.length - 1].place_id;
+    },
   },
   extraReducers: {
     // Add reducers for additional action types here, and handle loading state as needed
@@ -132,6 +138,7 @@ export const {
   removeWaypoint,
   updateStartPlace,
   updateEndPlace,
+  randomSort,
 } = searchLocationSlice.actions;
 
 export default searchLocationSlice.reducer;

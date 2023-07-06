@@ -2,9 +2,12 @@ import "@reach/combobox/styles.css";
 
 import { useAppDispatch, useAppSelector } from "@/states/hooks";
 import {
+  randomSort,
   removeLocation,
   removeWaypoint,
+  updateEndPlace,
   updateLocations,
+  updateStartPlace,
   updateWaypointsOrder,
 } from "@/states/slices/searchSlice";
 
@@ -40,14 +43,15 @@ const SideBar = ({
   const dispatch = useAppDispatch();
 
   const handleRearrange = () => {
-    const temp = [...locations];
-    dispatch(
-      updateLocations({
-        places: temp.sort(function (a, b) {
-          return 0.5 - Math.random();
-        }),
-      })
-    );
+    // const temp = [...locations];
+    // dispatch(
+    //   updateLocations({
+    //     places: temp.sort(function (a, b) {
+    //       return 0.5 - Math.random();
+    //     }),
+    //   })
+    // );
+    dispatch(randomSort());
   };
 
   const handleDownload = () => {};
@@ -237,7 +241,7 @@ const SideBar = ({
           )}
         </ul>
         <div className="flex gap-2 items-center justify-center py-2  transition-all duration-200 ease-in-out cursor-pointer  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800">
-          <button
+          {/* <button
             className={`
           flex gap-2 items-center justify-center bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 transition-all duration-200 ease-in-out cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 ${
             directionError.error ||
@@ -256,7 +260,7 @@ const SideBar = ({
           >
             <MdSort size={24} fill="current" />
             Rearrange
-          </button>
+          </button> */}
           {/* download formatted maps and direction data */}
           <button
             className={`
@@ -281,7 +285,7 @@ const SideBar = ({
           </button>
         </div>
         <p className="text-xs text-gray-700 mb-7">
-          Sort places by minial distance travelled
+          Sort places by minial time covered
         </p>
       </div>
     </>
