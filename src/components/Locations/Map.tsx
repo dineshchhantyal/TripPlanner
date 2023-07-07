@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GoogleMap, DirectionsRenderer } from "@react-google-maps/api";
+import { GoogleMap, DirectionsRenderer, Marker } from "@react-google-maps/api";
 
 import "@reach/combobox/styles.css";
 
@@ -11,7 +11,7 @@ import {
   updateWaypointsOrder,
 } from "@/states/slices/searchSlice";
 import { usePosition } from "@/hooks/useGeoLocation";
-
+import { FaLocationArrow } from "react-icons/fa";
 import { AiFillDelete, AiOutlineUpload } from "react-icons/ai";
 import { Providers } from "@/app/providers";
 import PlacesAutoComplete from "../SearchBar/PlaceAutoComplete";
@@ -20,6 +20,7 @@ import { Button, Modal } from "flowbite-react";
 import readXlsxFile from "read-excel-file";
 import { getGeocode, getLatLng } from "use-places-autocomplete";
 import { updatePlaces } from "@/states/slices/placesSlice";
+import { Head } from "next/document";
 
 function Map() {
   const { error, ...location } = usePosition();
@@ -29,7 +30,8 @@ function Map() {
   }>({ lat: location.latitude, lng: location.longitude });
   const locations = useAppSelector((state) => state.searchLocation.places);
   const dispatch = useAppDispatch();
-  const [direction, setDirection] = useState<any>(null);
+  const [direction, setDirection] =
+    useState<google.maps.DirectionsResult | null>(null);
   const [openModal, setOpenModal] = useState<string | undefined>();
   const places = useAppSelector((state) => state.searchLocation);
 
@@ -61,7 +63,11 @@ function Map() {
       types: string[];
     }[]
   >([]);
-
+  useEffect(() => {
+    console.log("current location", location);
+    if (location.latitude && location.longitude) {
+    }
+  }, [location]);
   useEffect(() => {
     if (locations && locations?.length > 0) {
       setCenter({
@@ -77,7 +83,7 @@ function Map() {
       error: false,
     });
     setDirection(null);
-    if (locations && locations?.length >= 2) {
+    if (locations && locations?.length > 1) {
       const origin = places.start
         ? locations.find((s) => s.place_id === places.start) ?? locations[0]
         : locations[0];
@@ -87,32 +93,49 @@ function Map() {
         : locations[0];
       // const destination = locations[locations.length - 1];
       const directionsService = new google.maps.DirectionsService();
+      console.log(
+        "fill loc",
+        locations
+          .filter(
+            (l) => l.place_id !== places?.end || l.place_id !== places.start
+          )
+          .map((l) => ({
+            location: l,
+            stopover: true,
+          })) ?? []
+      );
       directionsService.route(
         {
           origin,
           destination,
           waypoints:
-            locations
-              .filter(
-                (l) => l.place_id !== places?.end || l.place_id !== places.start
-              )
-              .map((l) => ({
-                location: l,
-                stopover: true,
-              })) ?? [],
+            locations.length > 1
+              ? locations
+                  .filter(
+                    (l) =>
+                      l.place_id !== places?.end || l.place_id !== places.start
+                  )
+                  .map((l) => ({
+                    location: l,
+                    stopover: true,
+                  })) ?? []
+              : [],
           optimizeWaypoints: true,
           travelMode: google.maps.TravelMode[mode],
           unitSystem: google.maps.UnitSystem.METRIC,
         },
         (result, status) => {
           if (status === google.maps.DirectionsStatus.OK) {
+            console.log(result);
             setDirection(result);
-
-            dispatch(
-              updateWaypointsOrder({
-                waypoints_order: result?.routes[0]?.waypoint_order ?? [],
-              })
-            );
+            console.log(result);
+            if (locations.length >= 2) {
+              dispatch(
+                updateWaypointsOrder({
+                  waypoints_order: result?.routes[0]?.waypoint_order ?? [],
+                })
+              );
+            }
           } else {
             setDirectionError({
               message: "Unable to find directions.",
@@ -124,7 +147,6 @@ function Map() {
     }
   }, [locations, mode]);
   const handleImportLocations = () => {
-    console.log("File locations", fileLocations);
     if (fileLocations.length < 1) {
       return;
     }
@@ -199,7 +221,7 @@ function Map() {
   };
   return (
     <>
-      <head>
+      {/* <Head>
         <link
           href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.css"
           rel="stylesheet"
@@ -208,7 +230,7 @@ function Map() {
           src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"
           async
         ></script>
-      </head>
+      </Head> */}
       <Providers>
         <div className="places-container flex gap-2">
           <PlacesAutoComplete />
@@ -264,7 +286,9 @@ function Map() {
           }}
         >
           <DirectionsRenderer
-            directions={directionError.error ? undefined : direction}
+            directions={
+              directionError.error ? undefined : direction ?? undefined
+            }
             options={{
               markerOptions: {
                 visible: true,
@@ -283,15 +307,45 @@ function Map() {
             // show distance and duration
             panel={document.getElementById("panel") as HTMLElement}
           />
+
+          {locations && locations?.length === 1 && (
+            <Marker
+              position={{
+                lat: locations[0].lat,
+                lng: locations[0].lng,
+              }}
+              // icon={{
+              //   url: "/icons/placeholder.svg",
+              //   scaledSize: new google.maps.Size(30, 30),
+              // }}
+            />
+          )}
         </GoogleMap>
 
         <SideBar
-          direction={direction}
+          direction={direction as google.maps.DirectionsResult}
           directionError={directionError}
           mode={mode}
           setMode={setMode}
           setCenter={setCenter}
         />
+
+        <div
+          className="absolute bottom-2 right-12 mr-4 mb-4 z-10
+          bg-white dark:bg-gray-800  shadow-lg p-2 grid place-items-center hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-200 rounded-full cursor-pointer
+        "
+        >
+          <button
+            onClick={() => {
+              setCenter({
+                lat: location.latitude,
+                lng: location.longitude,
+              });
+            }}
+          >
+            <FaLocationArrow size={18} />
+          </button>
+        </div>
 
         <Modal
           show={openModal === "default"}

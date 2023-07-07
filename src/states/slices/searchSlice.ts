@@ -44,6 +44,10 @@ export const searchLocationSlice = createSlice({
       }>
     ) => {
       const { place } = action.payload;
+      if (state.places.length === 0) {
+        state.start = place.place_id;
+        state.end = place.place_id;
+      }
       const index = state.places.findIndex(
         (p) => p.place_id === place.place_id
       );
