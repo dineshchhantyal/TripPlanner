@@ -2,6 +2,7 @@ import { Prediction } from "@/components/SearchBar/SearchBar";
 import { SearchLocation } from "@/types/SearchLocation";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Photo } from "./placesSlice";
+import { stat } from "fs";
 
 export interface Location extends SearchLocation {
   lat: number;
@@ -11,10 +12,16 @@ export interface Location extends SearchLocation {
 
 interface IPlaces {
   places: Location[];
+  waypoints_order?: number[];
+  start: string | undefined; // place_id
+  end: string | undefined; // place_id
 }
 
 const initialState: IPlaces = {
   places: [],
+  waypoints_order: [],
+  start: undefined,
+  end: undefined,
 };
 
 export const searchLocationSlice = createSlice({
@@ -37,6 +44,10 @@ export const searchLocationSlice = createSlice({
       }>
     ) => {
       const { place } = action.payload;
+      if (state.places.length === 0) {
+        state.start = place.place_id;
+        state.end = place.place_id;
+      }
       const index = state.places.findIndex(
         (p) => p.place_id === place.place_id
       );
@@ -47,6 +58,24 @@ export const searchLocationSlice = createSlice({
       }
     },
 
+    updateStartPlace: (
+      state,
+      action: PayloadAction<{
+        place_id: string;
+      }>
+    ) => {
+      const { place_id } = action.payload;
+      state.start = place_id;
+    },
+    updateEndPlace: (
+      state,
+      action: PayloadAction<{
+        place_id: string;
+      }>
+    ) => {
+      const { place_id } = action.payload;
+      state.end = place_id;
+    },
     removeLocation: (
       state,
       action: PayloadAction<{
@@ -59,14 +88,62 @@ export const searchLocationSlice = createSlice({
 
       state.places = p;
     },
+    sortLocations: (
+      state,
+      action: PayloadAction<{
+        waypoints_order: number[];
+      }>
+    ) => {
+      const { waypoints_order } = action.payload;
+      const newPlaces = [
+        state.places[0],
+        ...waypoints_order.map((i) => state.places[i]),
+      ];
+
+      state.places = newPlaces;
+    },
+    updateWaypointsOrder: (
+      state,
+      action: PayloadAction<{
+        waypoints_order: number[];
+      }>
+    ) => {
+      const { waypoints_order } = action.payload;
+      state.waypoints_order = waypoints_order;
+    },
+    removeWaypoint: (
+      state,
+      action: PayloadAction<{
+        index: number;
+      }>
+    ) => {
+      const { index } = action.payload;
+      const new_points = state.waypoints_order?.filter((_, i) => i !== index);
+      state.waypoints_order = new_points;
+    },
+    randomSort: (state) => {
+      const newPlaces = state.places.sort(() => Math.random() - 0.5);
+      state.places = newPlaces;
+      state.start = newPlaces[0].place_id;
+      state.end = newPlaces[newPlaces.length - 1].place_id;
+    },
   },
   extraReducers: {
     // Add reducers for additional action types here, and handle loading state as needed
   },
 });
 
-export const { updateLocations, addLocation, removeLocation } =
-  searchLocationSlice.actions;
+export const {
+  updateLocations,
+  addLocation,
+  removeLocation,
+  sortLocations,
+  updateWaypointsOrder,
+  removeWaypoint,
+  updateStartPlace,
+  updateEndPlace,
+  randomSort,
+} = searchLocationSlice.actions;
 
 export default searchLocationSlice.reducer;
 
@@ -79,16 +156,15 @@ export function fetchLocationPhotos(place: Location) {
     getState: any
   ) {
     try {
-      const response = await fetch(
-        `/api/images?query=${place.formatted_address}`
-      );
+      // const response = await fetch(
+      //   `/api/images?query=${place.formatted_address}`
+      // );
 
-      const images = await response.json();
+      // const images = await response.json();
       dispatch(
         addLocation({
           place: {
             ...place,
-            photos: images.photos,
           },
         })
       );
