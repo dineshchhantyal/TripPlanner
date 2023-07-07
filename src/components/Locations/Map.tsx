@@ -19,8 +19,6 @@ import SideBar from "../Sidebar/MapSidebar";
 import { Button, Modal } from "flowbite-react";
 import readXlsxFile from "read-excel-file";
 import { getGeocode, getLatLng } from "use-places-autocomplete";
-import { updatePlaces } from "@/states/slices/placesSlice";
-import { Head } from "next/document";
 
 function Map() {
   const { error, ...location } = usePosition();
