@@ -78,23 +78,61 @@ const SideBar = ({
           directionError={directionError}
         />
 
-        <ul className="max-h-96 overflow-y-scroll">
-          {/* if waypointsOrder is empty then print all continuously else print based on first point followed by waypointOrder */}
-          {waypoints?.length === 0 ? (
-            locations.map((location, index) => (
-              <li key={location.place_id}>
-                <div
+        {locations.length > 0 && (
+          <ul className="max-h-96 overflow-y-scroll">
+            {/* if waypointsOrder is empty then print all continuously else print based on first point followed by waypointOrder */}
+            {waypoints?.length === 0 ? (
+              locations.map((location, index) => (
+                <li key={location.place_id}>
+                  <div
+                    className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
+                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
+                  "
+                    onClick={() => {
+                      setCenter({ lat: location.lat, lng: location.lng });
+                    }}
+                  >
+                    <span>
+                      {location.formatted_address.length > 30
+                        ? location.formatted_address.slice(0, 30) + "..."
+                        : location.formatted_address}
+                    </span>
+                    <div className="flex">
+                      <button
+                        className="bg-red-500
+                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
+                    "
+                        onClick={() => {
+                          dispatch(
+                            removeLocation({ place_id: location.place_id })
+                          );
+                        }}
+                      >
+                        <AiFillDelete />
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <>
+                <li
+                  key={locations[0].place_id}
                   className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
                   px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
                   "
-                  onClick={() => {
-                    setCenter({ lat: location.lat, lng: location.lng });
-                  }}
                 >
-                  <span>
-                    {location.formatted_address.length > 30
-                      ? location.formatted_address.slice(0, 30) + "..."
-                      : location.formatted_address}
+                  <span
+                    onClick={() => {
+                      setCenter({
+                        lat: locations[0].lat,
+                        lng: locations[0].lng,
+                      });
+                    }}
+                  >
+                    {locations[0].formatted_address.length > 30
+                      ? locations[0].formatted_address.slice(0, 30) + "..."
+                      : locations[0].formatted_address}
                   </span>
                   <div className="flex">
                     <button
@@ -103,18 +141,112 @@ const SideBar = ({
                     "
                       onClick={() => {
                         dispatch(
-                          removeLocation({ place_id: location.place_id })
+                          removeLocation({ place_id: locations[0].place_id })
                         );
                       }}
                     >
                       <AiFillDelete />
                     </button>
                   </div>
-                </div>
-              </li>
-            ))
-          ) : (
-            <>
+                </li>
+                {direction &&
+                  direction.routes.at(0) &&
+                  direction?.routes.at(0)?.legs.at(0) && (
+                    <li>
+                      <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-slate-50 rounded my-1 shadow border-dotted">
+                        <span>
+                          {direction.routes[0]?.legs[0]?.distance?.text}
+                        </span>
+                        <span
+                          className="
+                          text-green-500 dark:text-green-400 transition duration-150 ease-in-out hover:text-green-600 dark:hover:text-green-500 cursor-pointer
+                          "
+                        >
+                          <BsArrowDown size={21} />
+                        </span>
+                        <span>
+                          {direction.routes[0]?.legs[0]?.duration?.text}
+                        </span>
+                      </div>
+                    </li>
+                  )}
+
+                {direction &&
+                  waypoints?.map((s, i) => (
+                    <>
+                      <li
+                        key={locations[s + 1]?.place_id}
+                        className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
+                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
+                  "
+                      >
+                        <span
+                          onClick={() => {
+                            setCenter({
+                              lat: locations[s + 1].lat,
+                              lng: locations[s + 1].lng,
+                            });
+                          }}
+                        >
+                          {locations[s + 1]?.formatted_address.length > 30
+                            ? locations[s + 1]?.formatted_address.slice(0, 30) +
+                              "..."
+                            : locations[s + 1]?.formatted_address}
+                        </span>
+                        <div className="flex">
+                          <button
+                            className="bg-red-500
+                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
+                    "
+                            onClick={() => {
+                              dispatch(
+                                updateWaypointsOrder({ waypoints_order: [] })
+                              );
+                              dispatch(
+                                removeLocation({
+                                  place_id: locations[s + 1].place_id,
+                                })
+                              );
+                            }}
+                          >
+                            <AiFillDelete />
+                          </button>
+                        </div>
+                      </li>
+                      {direction &&
+                        direction?.routes.length > 0 &&
+                        direction.routes[0].legs &&
+                        direction.routes[0].legs[i] && (
+                          <li>
+                            <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-slate-50 rounded my-1 shadow border-dotted">
+                              <span>
+                                {
+                                  direction?.routes[0].legs[i + 1]?.distance
+                                    ?.text
+                                }
+                              </span>
+                              <span
+                                className="
+                          text-green-500 dark:text-green-400 transition duration-150 ease-in-out hover:text-green-600 dark:hover:text-green-500 cursor-pointer
+                          "
+                              >
+                                <BsArrowDown size={21} />
+                              </span>
+                              <span>
+                                {
+                                  direction?.routes[0].legs[i + 1]?.duration
+                                    ?.text
+                                }
+                              </span>
+                            </div>
+                          </li>
+                        )}
+                    </>
+                  ))}
+              </>
+            )}
+
+            {locations.length > 1 && (
               <li
                 key={locations[0].place_id}
                 className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
@@ -130,131 +262,10 @@ const SideBar = ({
                     ? locations[0].formatted_address.slice(0, 30) + "..."
                     : locations[0].formatted_address}
                 </span>
-                <div className="flex">
-                  <button
-                    className="bg-red-500
-                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
-                    "
-                    onClick={() => {
-                      dispatch(
-                        removeLocation({ place_id: locations[0].place_id })
-                      );
-                    }}
-                  >
-                    <AiFillDelete />
-                  </button>
-                </div>
               </li>
-              {direction &&
-                direction.routes.at(0) &&
-                direction?.routes.at(0)?.legs.at(0) && (
-                  <li>
-                    <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-slate-50 rounded my-1 shadow border-dotted">
-                      <span>
-                        {direction.routes[0]?.legs[0]?.distance?.text}
-                      </span>
-                      <span
-                        className="
-                          text-green-500 dark:text-green-400 transition duration-150 ease-in-out hover:text-green-600 dark:hover:text-green-500 cursor-pointer
-                          "
-                      >
-                        <BsArrowDown size={21} />
-                      </span>
-                      <span>
-                        {direction.routes[0]?.legs[0]?.duration?.text}
-                      </span>
-                    </div>
-                  </li>
-                )}
-
-              {direction &&
-                waypoints?.map((s, i) => (
-                  <>
-                    <li
-                      key={locations[s + 1].place_id}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
-                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
-                  "
-                    >
-                      <span
-                        onClick={() => {
-                          setCenter({
-                            lat: locations[s + 1].lat,
-                            lng: locations[s + 1].lng,
-                          });
-                        }}
-                      >
-                        {locations[s + 1].formatted_address.length > 30
-                          ? locations[s + 1].formatted_address.slice(0, 30) +
-                            "..."
-                          : locations[s + 1].formatted_address}
-                      </span>
-                      <div className="flex">
-                        <button
-                          className="bg-red-500
-                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
-                    "
-                          onClick={() => {
-                            dispatch(
-                              removeLocation({
-                                place_id: locations[s + 1].place_id,
-                              })
-                            );
-                            dispatch(
-                              updateWaypointsOrder({ waypoints_order: [] })
-                            );
-                          }}
-                        >
-                          <AiFillDelete />
-                        </button>
-                      </div>
-                    </li>
-                    {direction &&
-                      direction?.routes.length > 0 &&
-                      direction.routes[0].legs &&
-                      direction.routes[0].legs[i] && (
-                        <li>
-                          <div className="flex justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-slate-50 rounded my-1 shadow border-dotted">
-                            <span>
-                              {direction?.routes[0].legs[i + 1]?.distance?.text}
-                            </span>
-                            <span
-                              className="
-                          text-green-500 dark:text-green-400 transition duration-150 ease-in-out hover:text-green-600 dark:hover:text-green-500 cursor-pointer
-                          "
-                            >
-                              <BsArrowDown size={21} />
-                            </span>
-                            <span>
-                              {direction?.routes[0].legs[i + 1]?.duration?.text}
-                            </span>
-                          </div>
-                        </li>
-                      )}
-                  </>
-                ))}
-            </>
-          )}
-
-          {locations.length > 1 && (
-            <li
-              key={locations[0].place_id}
-              className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
-                  px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
-                  "
-            >
-              <span
-                onClick={() => {
-                  setCenter({ lat: locations[0].lat, lng: locations[0].lng });
-                }}
-              >
-                {locations[0].formatted_address.length > 30
-                  ? locations[0].formatted_address.slice(0, 30) + "..."
-                  : locations[0].formatted_address}
-              </span>
-            </li>
-          )}
-        </ul>
+            )}
+          </ul>
+        )}
         <div className="flex gap-2 items-center justify-center py-2  transition-all duration-200 ease-in-out cursor-pointer  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800">
           {/* <button
             className={`

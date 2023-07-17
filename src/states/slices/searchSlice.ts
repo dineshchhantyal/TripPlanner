@@ -109,6 +109,7 @@ export const searchLocationSlice = createSlice({
       }>
     ) => {
       const { waypoints_order } = action.payload;
+      console.log(waypoints_order);
       state.waypoints_order = waypoints_order;
     },
     removeWaypoint: (

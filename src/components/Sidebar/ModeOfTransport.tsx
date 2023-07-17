@@ -52,12 +52,12 @@ const ModeOfTransport = ({
               className={`bg-white dark:bg-gray-800 shadow-md rounded-md p-2 w-72 mb-1 overflow-y-scroll transition-all
             ${open ? "h-40 opacity-100" : "h-0 opacity-0"}
             `}
+              onClick={() => handleOpen()}
             >
               <span
                 className={`
               block cursor-pointer w-max hover:bg-gray-100 dark:hover:bg-gray-700 transition-all rounded p-2
             `}
-                onClick={() => handleOpen()}
               >
                 <MdOpenInNew />
               </span>
