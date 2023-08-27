@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   const response = await fetch(
-    `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${process.env.GOOGLE_PLACE_API}&units=${units}&transit_mode=${transit_mode}&mode=${mode}&departure_time=${departure_time}`
+    `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${process.env.NEXT_PUBLIC_GOOGLE_PLACE_API}&units=${units}&transit_mode=${transit_mode}&mode=${mode}&departure_time=${departure_time}`
   );
   try {
     const data = await response.json();

@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   }
 
   const response = await fetch(
-    `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${place}&key=${process.env.GOOGLE_PLACE_API}&radius=50000`
+    `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${place}&key=${process.env.NEXT_PUBLIC_GOOGLE_PLACE_API}&radius=50000`
   );
   try {
     const data = await response.json();
