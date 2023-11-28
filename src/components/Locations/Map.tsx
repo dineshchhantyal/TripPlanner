@@ -62,7 +62,6 @@ function Map() {
     }[]
   >([]);
   useEffect(() => {
-    console.log("current location", location);
     if (location.latitude && location.longitude) {
     }
   }, [location]);
@@ -91,17 +90,7 @@ function Map() {
         : locations[0];
       // const destination = locations[locations.length - 1];
       const directionsService = new google.maps.DirectionsService();
-      console.log(
-        "fill loc",
-        locations
-          .filter(
-            (l) => l.place_id !== places?.end || l.place_id !== places.start
-          )
-          .map((l) => ({
-            location: l,
-            stopover: true,
-          })) ?? []
-      );
+
       directionsService.route(
         {
           origin,
@@ -124,9 +113,7 @@ function Map() {
         },
         (result, status) => {
           if (status === google.maps.DirectionsStatus.OK) {
-            console.log(result);
             setDirection(result);
-            console.log(result);
             if (locations.length >= 2) {
               dispatch(
                 updateWaypointsOrder({

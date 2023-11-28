@@ -2,7 +2,6 @@ export async function GET(request: Request) {
   // https://api.pexels.com/v1/search?query=${query}
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("query");
-  console.log(query);
   try {
     const req = await fetch("https://api.pexels.com/v1/search?query=" + query, {
       headers: {

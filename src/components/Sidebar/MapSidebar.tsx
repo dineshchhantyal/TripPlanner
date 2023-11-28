@@ -50,8 +50,6 @@ const SideBar = ({
     dispatch(randomSort());
   };
 
-  console.log(direction?.routes);
-
   const handleDownload = () => {
     const data = {
       locations: locations,
@@ -170,45 +168,47 @@ const SideBar = ({
               {direction &&
                 waypoints?.map((s, i) => (
                   <>
-                    <li
-                      key={locations[s + 1].place_id}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
+                    {locations[s + 1] && (
+                      <li
+                        key={locations[s + 1].place_id}
+                        className="hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer flex justify-between
                   px-4 py-2 text-sm text-gray-700 dark:text-gray-200 w-72 h-12 items-center overflow-hidden bg-gray-50 dark:bg-gray-800 rounded my-1 shadow
                   "
-                    >
-                      <span
-                        onClick={() => {
-                          setCenter({
-                            lat: locations[s + 1].lat,
-                            lng: locations[s + 1].lng,
-                          });
-                        }}
                       >
-                        {locations[s + 1].formatted_address.length > 30
-                          ? locations[s + 1].formatted_address.slice(0, 30) +
-                            "..."
-                          : locations[s + 1].formatted_address}
-                      </span>
-                      <div className="flex">
-                        <button
-                          className="bg-red-500
-                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
-                    "
+                        <span
                           onClick={() => {
-                            dispatch(
-                              removeLocation({
-                                place_id: locations[s + 1].place_id,
-                              })
-                            );
-                            dispatch(
-                              updateWaypointsOrder({ waypoints_order: [] })
-                            );
+                            setCenter({
+                              lat: locations[s + 1].lat,
+                              lng: locations[s + 1].lng,
+                            });
                           }}
                         >
-                          <AiFillDelete />
-                        </button>
-                      </div>
-                    </li>
+                          {locations[s + 1].formatted_address.length > 30
+                            ? locations[s + 1].formatted_address.slice(0, 30) +
+                              "..."
+                            : locations[s + 1].formatted_address}
+                        </span>
+                        <div className="flex">
+                          <button
+                            className="bg-red-500
+                    hover:bg-red-600 text-white px-2 py-1 rounded mr-2 text-xs font-bold
+                    "
+                            onClick={() => {
+                              dispatch(
+                                removeLocation({
+                                  place_id: locations[s + 1].place_id,
+                                })
+                              );
+                              dispatch(
+                                updateWaypointsOrder({ waypoints_order: [] })
+                              );
+                            }}
+                          >
+                            <AiFillDelete />
+                          </button>
+                        </div>
+                      </li>
+                    )}
                     {direction &&
                       direction?.routes.length > 0 &&
                       direction.routes[0].legs &&

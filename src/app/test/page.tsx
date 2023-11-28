@@ -11,7 +11,6 @@ export default function Places() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_PLACE_API ?? "",
     libraries: ["places"],
   });
-
   if (!isLoaded) return <div>Loading...</div>;
   return <Map />;
 }

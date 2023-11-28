@@ -18,7 +18,6 @@ const DraggableBox = ({
   x?: number;
   y?: number;
 }) => {
-  console.log(x, y);
   const updateXarrow = useXarrow();
   return (
     // @ts-expect-error

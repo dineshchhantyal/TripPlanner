@@ -50,10 +50,8 @@ async function getDistanceMatrix() {
     }
 
     const rn = await axios(
-      `http://localhost:3000/api/direction?origin=${
-        places[j - 1]
-      }&destination=${
-        places[i]
+      `http://localhost:3000/api/direction?origin=${places[j - 1]
+      }&destination=${places[i]
       }&mode=driving&units=imperial&transit_mode=bus&departure_time=now`
     );
     distancesMatrix[i][places.length] =
