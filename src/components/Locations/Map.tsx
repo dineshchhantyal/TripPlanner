@@ -375,6 +375,16 @@ function Map() {
                       {/* import trip using excel file */}
                       Currently only excel(.xlsx, .xls) file is supported.
                     </p>
+                    {/* Note */}
+                    <p
+                      className="text-base leading-relaxed text-gray-500 dark:text-gray-400
+                      border-l-4 border-blue-500 pl-4 italic
+                    "
+                    >
+                      {/* import trip using excel file */}
+                      Note: The first row of the file should contain the
+                      identifiable address of the locations.
+                    </p>
                   </>
                 ) : (
                   fileLocations &&
